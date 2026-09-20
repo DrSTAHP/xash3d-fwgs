@@ -753,7 +753,6 @@ CL_BhopHack
 =================
 */
 
-static qboolean gWasSpoofed = false;
 static int gLastAirborneInput = 0;
 
 inline void CL_BhopHack(usercmd_t *const cmd)
@@ -771,12 +770,11 @@ inline void CL_BhopHack(usercmd_t *const cmd)
 		cmd->buttons = bInJumpState ? cmd->buttons | IN_JUMP : cmd->buttons & ~(IN_JUMP);
 
 		gLastAirborneInput = cmd->buttons & IN_JUMP;
-		gWasSpoofed = true;
 	}
-	else if( gWasSpoofed && ( gLastAirborneInput & IN_JUMP ) )
+	else if( gLastAirborneInput & IN_JUMP )
 	{
 		cmd->buttons &= ~(IN_JUMP);
-		gWasSpoofed = false;
+		gLastAirborneInput = 0;
 	}
 }
 
