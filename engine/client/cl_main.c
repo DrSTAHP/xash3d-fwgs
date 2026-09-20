@@ -87,6 +87,9 @@ CVAR_DEFINE_AUTO( ui_renderworld, "0", FCVAR_ARCHIVE, "render world when UI is v
 static CVAR_DEFINE_AUTO( cl_maxframetime, "0", 0, "set deadline timer for client rendering to catch freezes" );
 CVAR_DEFINE_AUTO( cl_fixmodelinterpolationartifacts, "1", 0, "try to fix up models interpolation on a moving platforms (monsters on trains for example)" );
 
+CVAR_DEFINE_AUTO( cl_hack_bhop, "0", FCVAR_ARCHIVE, "Enable the Bunny Hop hack.");
+static inline void CL_BhopHack( usercmd_t *const cmd );
+
 //
 // userinfo
 //
@@ -746,6 +749,39 @@ static void CL_UpdateClientData( void )
 
 /*
 =================
+CL_BhopHack
+=================
+*/
+
+static qboolean gWasSpoofed = false;
+static int gLastAirborneInput = 0;
+
+inline void CL_BhopHack(usercmd_t *const cmd)
+{
+	if( ! (cmd->buttons & IN_JUMP ) )
+		return;
+	
+	// If we're airborne, spoof the +jump cmds with somewhat believable inputs.
+	// If we're not airborne and the previous input was spoofed and lasted on active +jump cmd, clear the +jump cmd from the current tick.
+	// TODO: The above condition makes the jump delayed by one tick after initially touching the ground. It doesn't seem to impact the velocity that much though (???).
+	// TODO: Make it so that the cmd gets cleared a tick before touching the ground.   
+	if( cl.local.onground == -1 )
+	{
+		const qboolean bInJumpState = (COM_RandomLong(1, 6)) <= 4; // ~66% chance of the input being IN_JUMP
+		cmd->buttons = bInJumpState ? cmd->buttons | IN_JUMP : cmd->buttons & ~(IN_JUMP);
+
+		gLastAirborneInput = cmd->buttons & IN_JUMP;
+		gWasSpoofed = true;
+	}
+	else if( gWasSpoofed && ( gLastAirborneInput & IN_JUMP ) )
+	{
+		cmd->buttons &= ~(IN_JUMP);
+		gWasSpoofed = false;
+	}
+}
+
+/*
+=================
 CL_CreateCmd
 =================
 */
@@ -807,6 +843,11 @@ static void CL_CreateCmd( void )
 	Platform_PreCreateMove();
 	clgame.dllFuncs.CL_CreateMove( host.frametime, cmd, active );
 	IN_EngineAppendMove( host.frametime, cmd, active );
+
+	if(cl_hack_bhop.value)
+	{
+		CL_BhopHack(cmd);
+	}
 
 	CL_PopPMStates();
 
@@ -3825,6 +3866,8 @@ static void CL_InitLocal( void )
 	Cmd_AddCommand( "richpresence_update", Cmd_Null_f, "compatibility command, does nothing" );
 
 	Cmd_AddCommand( "cl_list_messages", CL_ListMessages_f, "list registered user messages" );
+
+	Cvar_RegisterVariable(&cl_hack_bhop);
 }
 
 //============================================================================
