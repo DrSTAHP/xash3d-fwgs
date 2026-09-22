@@ -46,3 +46,7 @@
 [submodule "3rdparty/freevgui"]
 	path = 3rdparty/freevgui
 	url = https://github.com/FWGS/freevgui
+[submodule "3rdparty/imgui"]
+	path = 3rdparty/imgui
+	url = https://github.com/DrSTAHP/imgui
+	branch = xash_cheat
