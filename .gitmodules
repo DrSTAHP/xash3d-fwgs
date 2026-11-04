@@ -65,3 +65,7 @@
 	path = 3rdparty/opengnm-psbc/Vulkan-Headers
 	url = https://github.com/KhronosGroup/Vulkan-Headers
 	update = none
+[submodule "3rdparty/imgui"]
+	path = 3rdparty/imgui
+	url = https://github.com/DrSTAHP/imgui
+	branch = xash_cheat

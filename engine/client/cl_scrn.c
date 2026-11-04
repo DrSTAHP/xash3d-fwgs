@@ -127,13 +127,20 @@ void SCR_DrawPos( void )
 	float speed = VectorLength( cl.simvel );
 
 	Q_snprintf( msg, MAX_SYSPATH,
-		"pos: %.2f %.2f %.2f\n"
-		"ang: %.2f %.2f %.2f\n"
-		"velocity: %.2f",
+		"pos: %.2f %.2f %.2f\n\n"
+		
+		"view ang: %.2f %.2f %.2f\n"
+		"ent ang: %.2f %.2f %.2f\n\n"
+		
+		"velocity: %.2f %.2f %.2f\n"
+		"speed: %.2f",
+
 		cl.simorg[0], cl.simorg[1], cl.simorg[2],
-		// should we use entity angles or viewangles?
-		// view isn't always bound to player
+		
+		cl.viewangles[0], cl.viewangles[1], cl.viewangles[2],
 		ent->angles[0], ent->angles[1], ent->angles[2],
+		
+		cl.simvel[0], cl.simvel[1], cl.simvel[2],
 		speed );
 
 	MakeRGBA( color, 255, 255, 255, 255 );
