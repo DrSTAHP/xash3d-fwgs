@@ -164,7 +164,7 @@ def build(bld):
 	bld(name = 'engine_includes', export_includes = '. common common/imagelib', use = 'filesystem_includes')
 
 	libs = ['engine_includes', 'public', 'werror', 'backtrace_custom', 'library_suffix', 'build_vcs', 'mbedtls', 'yy_thunks']
-	includes = ['server', 'client', 'client/vgui', 'common/soundlib', 'platform']
+	includes = ['server', 'client', 'client/vgui', 'common/soundlib', 'platform', 'client/imgui_api']
 
 	# basic build: dedicated only
 	source = bld.path.ant_glob(['common/*.c', 'common/imagelib/*.c', 'common/soundlib/*.c', 'server/*.c', 'common/http/*.c'])
@@ -265,7 +265,9 @@ def build(bld):
 		# add client files
 		if not bld.env.DEDICATED:
 			source += bld.path.ant_glob('client/**/*.c')
-			libs += ['bzip2', 'MultiEmulator', 'opus', 'opusfile', 'vorbis', 'vorbisfile']
+			source += bld.path.ant_glob('client/imgui_api/*.cpp') # For ImGui related things...
+
+			libs += ['bzip2', 'MultiEmulator', 'opus', 'opusfile', 'vorbis', 'vorbisfile', 'imgui']
 
 		# Android port is linked differently
 		if bld.env.DEST_OS == 'android':

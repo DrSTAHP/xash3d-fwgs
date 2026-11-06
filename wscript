@@ -143,6 +143,9 @@ SUBDIRS = [
 	Subproject('utils/xar',               lambda x: x.env.ENABLE_UTILS and x.env.ENABLE_XAR),
 	Subproject('utils/xash-clang-format', lambda x: x.env.ENABLE_UTILS),
 
+	#ImGUI
+	Subproject('3rdparty/imgui',           lambda x: x.env.CLIENT),
+
 	# enabled on PSVita only
 	Subproject('ref/gl/vgl_shim',   lambda x: x.env.DEST_OS == 'psvita'),
 ]

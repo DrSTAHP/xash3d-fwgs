@@ -21,6 +21,7 @@ GNU General Public License for more details.
 #include "shake.h"
 #include "input.h"
 #include "eiface.h"
+#include "imgui_hack.h"
 
 #if XASH_LOW_MEMORY != 2
 int CL_UPDATE_BACKUP = SINGLEPLAYER_BACKUP;
@@ -65,19 +66,22 @@ static void CL_ParseSoundPacket( sizebuf_t *msg, qboolean restore )
 	int chan = MSG_ReadUBitLong( msg, MAX_SND_CHAN_BITS );
 
 	float volume;
-	if( FBitSet( flags, SND_VOLUME ))
+	if( FBitSet( flags, SND_VOLUME ) )
 		volume = (float)MSG_ReadByte( msg ) / 255.0f;
-	else volume = VOL_NORM;
+	else
+		volume = VOL_NORM;
 
 	float attn;
-	if( FBitSet( flags, SND_ATTENUATION ))
+	if( FBitSet( flags, SND_ATTENUATION ) )
 		attn = (float)MSG_ReadByte( msg ) / 64.0f;
-	else attn = ATTN_NONE;
+	else
+		attn = ATTN_NONE;
 
 	int pitch;
-	if( FBitSet( flags, SND_PITCH ))
+	if( FBitSet( flags, SND_PITCH ) )
 		pitch = MSG_ReadByte( msg );
-	else pitch = PITCH_NORM;
+	else
+		pitch = PITCH_NORM;
 
 	// entity reletive
 	int entnum = MSG_ReadUBitLong( msg, MAX_ENTITY_BITS );
@@ -87,17 +91,19 @@ static void CL_ParseSoundPacket( sizebuf_t *msg, qboolean restore )
 	MSG_ReadVec3Coord( msg, pos );
 
 	sound_t handle = 0;
-	if( FBitSet( flags, SND_SENTENCE ))
+	if( FBitSet( flags, SND_SENTENCE ) )
 	{
-		char	sentenceName[32];
+		char sentenceName[32];
 
-		if( FBitSet( flags, SND_SEQUENCE ))
+		if( FBitSet( flags, SND_SEQUENCE ) )
 			Q_snprintf( sentenceName, sizeof( sentenceName ), "!#%i", sound + MAX_SOUNDS_NONSENTENCE );
-		else Q_snprintf( sentenceName, sizeof( sentenceName ), "!%i", sound );
+		else
+			Q_snprintf( sentenceName, sizeof( sentenceName ), "!%i", sound );
 
 		handle = S_RegisterSound( sentenceName );
 	}
-	else handle = cl.sound_index[sound];	// see precached sound
+	else
+		handle = cl.sound_index[sound]; // see precached sound
 
 	uint wordIndex = 0;
 	double samplePos = 0, forcedEnd = 0;
@@ -106,8 +112,8 @@ static void CL_ParseSoundPacket( sizebuf_t *msg, qboolean restore )
 		wordIndex = MSG_ReadByte( msg );
 
 		// 16 bytes here
-		MSG_ReadBytes( msg, &samplePos, sizeof( samplePos ), sizeof( samplePos ));
-		MSG_ReadBytes( msg, &forcedEnd, sizeof( forcedEnd ), sizeof( forcedEnd ));
+		MSG_ReadBytes( msg, &samplePos, sizeof( samplePos ), sizeof( samplePos ) );
+		MSG_ReadBytes( msg, &forcedEnd, sizeof( forcedEnd ), sizeof( forcedEnd ) );
 	}
 
 	if( !cl.audio_prepped )
@@ -140,7 +146,7 @@ void CL_ParseServerTime( sizebuf_t *msg, connprotocol_t proto )
 
 	double dt = cl.time - cl.mtime[0];
 
-	if( fabs( dt ) > cl_clockreset.value )	// 0.1 by default
+	if( fabs( dt ) > cl_clockreset.value ) // 0.1 by default
 	{
 		cl.time = cl.mtime[0];
 		cl.timedelta = 0.0f;
@@ -162,7 +168,7 @@ CL_ParseSignon
 */
 static void CL_ParseSignon( sizebuf_t *msg, connprotocol_t proto )
 {
-	int	i = MSG_ReadByte( msg );
+	int i = MSG_ReadByte( msg );
 
 	if( i <= cls.signon )
 	{
@@ -183,12 +189,12 @@ CL_ParseMovevars
 */
 void CL_ParseMovevars( sizebuf_t *msg )
 {
-	Delta_InitClient ();	// finalize client delta's
+	Delta_InitClient(); // finalize client delta's
 
 	MSG_ReadDeltaMovevars( msg, &clgame.oldmovevars, &clgame.movevars );
 
 	// water alpha is not allowed
-	if( !FBitSet( world.flags, FWORLD_WATERALPHA ))
+	if( !FBitSet( world.flags, FWORLD_WATERALPHA ) )
 		clgame.movevars.wateralpha = 1.0f;
 
 	// update sky if changed
@@ -225,12 +231,14 @@ static void CL_ParseParticles( sizebuf_t *msg, connprotocol_t proto )
 	float life;
 	if( proto == PROTO_GOLDSRC )
 		life = 0.0f;
-	else life = MSG_ReadByte( msg ) * 0.125f;
+	else
+		life = MSG_ReadByte( msg ) * 0.125f;
 
 	if( life != 0.0f && count == 1 )
 	{
 		particle_t *p = R_AllocParticle( NULL );
-		if( !p ) return;
+		if( !p )
+			return;
 
 		p->die += life;
 		p->color = color;
@@ -239,7 +247,8 @@ static void CL_ParseParticles( sizebuf_t *msg, connprotocol_t proto )
 		VectorCopy( org, p->org );
 		VectorCopy( dir, p->vel );
 	}
-	else R_RunParticleEffect( org, dir, color, count );
+	else
+		R_RunParticleEffect( org, dir, color, count );
 }
 
 /*
@@ -288,16 +297,15 @@ static void CL_ParseStaticEntity( sizebuf_t *msg )
 	if( ent->curstate.rendermode == kRenderNormal && ent->model != NULL )
 	{
 		// auto 'solid' faces
-		if( FBitSet( ent->model->flags, MODEL_TRANSPARENT ) && Host_IsQuakeCompatible( ))
+		if( FBitSet( ent->model->flags, MODEL_TRANSPARENT ) && Host_IsQuakeCompatible() )
 		{
 			ent->curstate.rendermode = kRenderTransAlpha;
 			ent->curstate.renderamt = 255;
 		}
 	}
 
-	R_AddEfrags( ent );	// add link
+	R_AddEfrags( ent ); // add link
 }
-
 
 /*
 ==================
@@ -315,7 +323,7 @@ void GAME_EXPORT CL_WeaponAnim( int iAnim, int body )
 	view->curstate.framerate = 1.0f;
 	view->curstate.body = body;
 
-#if 0	// g-cont. for GlowShell testing
+#if 0 // g-cont. for GlowShell testing
 	view->curstate.renderfx = kRenderFxGlowShell;
 	view->curstate.rendercolor.r = 255;
 	view->curstate.rendercolor.g = 128;
@@ -341,7 +349,8 @@ void CL_ParseStaticDecal( sizebuf_t *msg )
 	int modelIndex;
 	if( entityIndex > 0 )
 		modelIndex = MSG_ReadWord( msg );
-	else modelIndex = 0;
+	else
+		modelIndex = 0;
 	int flags = MSG_ReadByte( msg );
 	float scale = (float)MSG_ReadWord( msg ) / 4096.0f;
 
@@ -372,7 +381,7 @@ CL_RequestMissingResources
 */
 qboolean CL_RequestMissingResources( void )
 {
-	if( !cls.dl.doneregistering && ( cls.dl.custom || cls.state == ca_validate ))
+	if( !cls.dl.doneregistering && ( cls.dl.custom || cls.state == ca_validate ) )
 	{
 		resource_t *p = cl.resourcesneeded.pNext;
 
@@ -382,7 +391,7 @@ qboolean CL_RequestMissingResources( void )
 			host.downloadcount = 0;
 			cls.dl.custom = false;
 		}
-		else if( !FBitSet( p->ucFlags, RES_WASMISSING ))
+		else if( !FBitSet( p->ucFlags, RES_WASMISSING ) )
 		{
 			CL_MoveToOnHandList( cl.resourcesneeded.pNext );
 			return true;
@@ -397,16 +406,17 @@ void CL_BatchResourceRequest( qboolean initialize )
 	sizebuf_t msg;
 	qboolean done_downloading = true;
 
-	MSG_Init( &msg, "Resource Batch", data, sizeof( data ));
+	MSG_Init( &msg, "Resource Batch", data, sizeof( data ) );
 
 	// client resources is not precached by server
-	if( initialize ) CL_AddClientResources();
+	if( initialize )
+		CL_AddClientResources();
 
 	for( resource_t *p = cl.resourcesneeded.pNext, *n; p && p != &cl.resourcesneeded; p = n )
 	{
 		n = p->pNext;
 
-		if( !FBitSet( p->ucFlags, RES_WASMISSING ))
+		if( !FBitSet( p->ucFlags, RES_WASMISSING ) )
 		{
 			CL_MoveToOnHandList( p );
 			continue;
@@ -424,7 +434,7 @@ void CL_BatchResourceRequest( qboolean initialize )
 		case t_sound:
 		case t_model:
 		case t_eventscript:
-			if( !CL_CheckFile( &msg, p ))
+			if( !CL_CheckFile( &msg, p ) )
 			{
 				done_downloading = false;
 				break;
@@ -435,12 +445,13 @@ void CL_BatchResourceRequest( qboolean initialize )
 			CL_MoveToOnHandList( p );
 			break;
 		case t_decal:
-			if( !HPAK_GetDataPointer( hpk_custom_file.string, p, NULL, NULL ))
+			if( !HPAK_GetDataPointer( hpk_custom_file.string, p, NULL, NULL ) )
 			{
-				if( !FBitSet( p->ucFlags, RES_REQUESTED ))
+				if( !FBitSet( p->ucFlags, RES_REQUESTED ) )
 				{
 					MSG_BeginClientCmd( &msg, clc_stringcmd );
-					MSG_WriteStringf( &msg, "dlfile !MD5%s", MD5_Print( p->rgucMD5_hash ));;
+					MSG_WriteStringf( &msg, "dlfile !MD5%s", MD5_Print( p->rgucMD5_hash ) );
+					;
 					SetBits( p->ucFlags, RES_REQUESTED );
 					done_downloading = false;
 				}
@@ -449,13 +460,13 @@ void CL_BatchResourceRequest( qboolean initialize )
 			CL_MoveToOnHandList( p );
 			break;
 		case t_generic:
-			if( !COM_IsSafeFileToDownload( p->szFileName ))
+			if( !COM_IsSafeFileToDownload( p->szFileName ) )
 			{
 				CL_RemoveFromResourceList( p );
 				Mem_Free( p );
 				break;
 			}
-			if( !CL_CheckFile( &msg, p ))
+			if( !CL_CheckFile( &msg, p ) )
 				break;
 			CL_MoveToOnHandList( p );
 			break;
@@ -467,7 +478,7 @@ void CL_BatchResourceRequest( qboolean initialize )
 
 	if( cls.state != ca_disconnected )
 	{
-		if( done_downloading && CL_PrecacheResources( ))
+		if( done_downloading && CL_PrecacheResources() )
 		{
 			CL_RegisterResources( &msg, cls.net_protocol );
 		}
@@ -498,14 +509,14 @@ int CL_EstimateNeededResources( void )
 
 			CL_ResourcePath( filepath, sizeof( filepath ), p );
 
-			if( !CL_HasResourceFile( p, filepath ))
+			if( !CL_HasResourceFile( p, filepath ) )
 			{
 				SetBits( p->ucFlags, RES_WASMISSING );
 				nTotalSize += p->nDownloadSize;
 			}
 			break;
 		case t_decal:
-			if( FBitSet( p->ucFlags, RES_CUSTOM ))
+			if( FBitSet( p->ucFlags, RES_CUSTOM ) )
 			{
 				SetBits( p->ucFlags, RES_WASMISSING );
 				nTotalSize += p->nDownloadSize;
@@ -522,9 +533,9 @@ int CL_EstimateNeededResources( void )
 
 static void CL_StartResourceDownloading( const char *pszMessage, qboolean bCustom )
 {
-	resourceinfo_t	ri;
+	resourceinfo_t ri;
 
-	if( !COM_StringEmptyOrNULL( pszMessage ))
+	if( !COM_StringEmptyOrNULL( pszMessage ) )
 		Con_DPrintf( "%s", pszMessage );
 
 	cls.dl.nTotalSize = COM_SizeofResourceList( &cl.resourcesneeded, &ri );
@@ -545,7 +556,7 @@ static void CL_StartResourceDownloading( const char *pszMessage, qboolean bCusto
 	cls.dl.doneregistering = false;
 	cls.dl.fLastStatusUpdate = host.realtime;
 	cls.dl.nRemainingToTransfer = cls.dl.nTotalToTransfer;
-	memset( cls.dl.rgStats, 0, sizeof( cls.dl.rgStats ));
+	memset( cls.dl.rgStats, 0, sizeof( cls.dl.rgStats ) );
 	cls.dl.nCurStat = 0;
 
 	CL_BatchResourceRequest( !bCustom );
@@ -602,16 +613,16 @@ static void CL_ParseCustomization( sizebuf_t *msg )
 	if( i >= MAX_CLIENTS )
 		Host_Error( "Bogus player index during customization parsing.\n" );
 
-	resource_t *pRes = Mem_Calloc( cls.mempool, sizeof( resource_t ));
+	resource_t *pRes = Mem_Calloc( cls.mempool, sizeof( resource_t ) );
 	pRes->type = MSG_ReadByte( msg );
 
-	Q_strncpy( pRes->szFileName, MSG_ReadString( msg ), sizeof( pRes->szFileName ));
+	Q_strncpy( pRes->szFileName, MSG_ReadString( msg ), sizeof( pRes->szFileName ) );
 	pRes->nIndex = MSG_ReadShort( msg );
 	pRes->nDownloadSize = MSG_ReadLong( msg );
 	pRes->ucFlags = MSG_ReadByte( msg ) & ~RES_WASMISSING;
 	pRes->pNext = pRes->pPrev = NULL;
 
-	if( FBitSet( pRes->ucFlags, RES_CUSTOM ))
+	if( FBitSet( pRes->ucFlags, RES_CUSTOM ) )
 		MSG_ReadBytes( msg, pRes->rgucMD5_hash, sizeof( pRes->rgucMD5_hash ), 16 );
 	pRes->playernum = i;
 
@@ -637,14 +648,14 @@ static void CL_ParseCustomization( sizebuf_t *msg )
 	qboolean bFound = false;
 	for( customization_t *pList = cl.players[pRes->playernum].customdata.pNext; pList; pList = pList->pNext )
 	{
-		if( !memcmp( pList->resource.rgucMD5_hash, pRes->rgucMD5_hash, 16 ))
+		if( !memcmp( pList->resource.rgucMD5_hash, pRes->rgucMD5_hash, 16 ) )
 		{
 			bFound = true;
 			break;
 		}
 	}
 
-	if( HPAK_GetDataPointer( hpk_custom_file.string, pRes, NULL, NULL ))
+	if( HPAK_GetDataPointer( hpk_custom_file.string, pRes, NULL, NULL ) )
 	{
 		qboolean bError = false;
 
@@ -652,7 +663,7 @@ static void CL_ParseCustomization( sizebuf_t *msg )
 		{
 			customization_t *pList = &cl.players[pRes->playernum].customdata;
 
-			if( !COM_CreateCustomization( pList, pRes, pRes->playernum, FCUST_FROMHPAK, NULL, NULL ))
+			if( !COM_CreateCustomization( pList, pRes, pRes->playernum, FCUST_FROMHPAK, NULL, NULL ) )
 				bError = true;
 		}
 		else
@@ -660,7 +671,8 @@ static void CL_ParseCustomization( sizebuf_t *msg )
 			Con_DPrintf( "Duplicate resource ignored for local client\n" );
 		}
 
-		if( bError ) Con_DPrintf( "Error loading customization\n" );
+		if( bError )
+			Con_DPrintf( "Error loading customization\n" );
 		Mem_Free( pRes );
 	}
 	else
@@ -683,7 +695,7 @@ void CL_SendResourceList( const resource_t *list, int count )
 	byte buffer[MAX_INIT_MSG];
 	sizebuf_t sbuf;
 
-	MSG_Init( &sbuf, "ResourceBlock", buffer, sizeof( buffer ));
+	MSG_Init( &sbuf, "ResourceBlock", buffer, sizeof( buffer ) );
 	MSG_BeginClientCmd( &sbuf, clc_resourcelist );
 	MSG_WriteShort( &sbuf, count );
 
@@ -695,7 +707,7 @@ void CL_SendResourceList( const resource_t *list, int count )
 		MSG_WriteLong( &sbuf, list[i].nDownloadSize );
 		MSG_WriteByte( &sbuf, list[i].ucFlags );
 
-		if( FBitSet( list[i].ucFlags, RES_CUSTOM ))
+		if( FBitSet( list[i].ucFlags, RES_CUSTOM ) )
 			MSG_WriteBytes( &sbuf, list[i].rgucMD5_hash, 16 );
 	}
 
@@ -704,7 +716,7 @@ void CL_SendResourceList( const resource_t *list, int count )
 
 	cl.num_sent_resources = count;
 	if( count > 0 )
-		memcpy( cl.sent_resources_hash, list[0].rgucMD5_hash, sizeof( cl.sent_resources_hash ));
+		memcpy( cl.sent_resources_hash, list[0].rgucMD5_hash, sizeof( cl.sent_resources_hash ) );
 }
 
 static void CL_ParseResourceRequest( sizebuf_t *msg )
@@ -737,7 +749,7 @@ static void CL_CreateCustomizationList( void )
 	{
 		resource_t *pResource = &cl.resourcelist[i];
 
-		if( !COM_CreateCustomization( &pPlayer->customdata, pResource, cl.playernum, 0, NULL, NULL ))
+		if( !COM_CreateCustomization( &pPlayer->customdata, pResource, cl.playernum, 0, NULL, NULL ) )
 			Con_Printf( "problem with client customization %s, ignoring...", pResource->szFileName );
 	}
 }
@@ -750,7 +762,7 @@ CL_ParseFileTransferFailed
 */
 static void CL_ParseFileTransferFailed( sizebuf_t *msg )
 {
-	const char	*name = MSG_ReadString( msg );
+	const char *name = MSG_ReadString( msg );
 
 	if( !cls.demoplayback )
 		CL_ProcessFile( false, name );
@@ -770,10 +782,10 @@ CL_ParseServerData
 */
 static void CL_ParseServerData( sizebuf_t *msg, connprotocol_t proto )
 {
-	char	gamefolder[MAX_QPATH];
-	string	mapfile;
-	qboolean	background;
-	int	i, required_version;
+	char gamefolder[MAX_QPATH];
+	string mapfile;
+	qboolean background;
+	int i, required_version;
 
 	HPAK_CheckSize( hpk_custom_file.string );
 
@@ -790,11 +802,11 @@ static void CL_ParseServerData( sizebuf_t *msg, connprotocol_t proto )
 	}
 
 	cls.timestart = Platform_DoubleTime();
-	cls.demowaiting = false;	// server is changed
+	cls.demowaiting = false; // server is changed
 
 	// wipe the client_t struct
 	if( !cls.changelevel && !cls.changedemo )
-		CL_ClearState ();
+		CL_ClearState();
 
 	// Re-init hud video, especially if we changed game directories
 	clgame.dllFuncs.pfnVidInit();
@@ -813,35 +825,36 @@ static void CL_ParseServerData( sizebuf_t *msg, connprotocol_t proto )
 		byte clientdllmd5[16];
 		const char *s;
 
-		MSG_ReadBytes( msg, clientdllmd5, sizeof( clientdllmd5 ), sizeof( clientdllmd5 ));
+		MSG_ReadBytes( msg, clientdllmd5, sizeof( clientdllmd5 ), sizeof( clientdllmd5 ) );
 		cl.maxclients = MSG_ReadByte( msg );
 		cl.playernum = MSG_ReadByte( msg );
-		COM_UnMunge3((byte *)&cl.checksum, sizeof( cl.checksum ), ( 0xff - cl.playernum ) & 0xff );
+		COM_UnMunge3( (byte *)&cl.checksum, sizeof( cl.checksum ), ( 0xff - cl.playernum ) & 0xff );
 
 		MSG_SeekToBit( msg, sizeof( uint8_t ) << 3, SEEK_CUR ); // quake leftover, coop flag
 
-		Q_strncpy( gamefolder, MSG_ReadString( msg ), sizeof( gamefolder ));
-		Con_Printf( "Remote host: %s\n", MSG_ReadString( msg ));
+		Q_strncpy( gamefolder, MSG_ReadString( msg ), sizeof( gamefolder ) );
+		Con_Printf( "Remote host: %s\n", MSG_ReadString( msg ) );
 		// map name is sent as maps/<name>.bsp, only strip the maps/ prefix to keep subdirectories intact
 		s = MSG_ReadString( msg );
-		if( !Q_strnicmp( s, "maps/", 5 ))
+		if( !Q_strnicmp( s, "maps/", 5 ) )
 			s += 5;
-		else s = COM_FileWithoutPath( s );
-		Q_strncpy( clgame.mapname, s, sizeof( clgame.mapname ));
+		else
+			s = COM_FileWithoutPath( s );
+		Q_strncpy( clgame.mapname, s, sizeof( clgame.mapname ) );
 		COM_StripExtension( clgame.mapname );
 
 		s = MSG_ReadString( msg );
-		if( !COM_StringEmpty( s ))
+		if( !COM_StringEmpty( s ) )
 			Con_Printf( "Server map cycle: %s\n", s ); // VALVEWHY?
 
-		if( MSG_ReadByte( msg ))
+		if( MSG_ReadByte( msg ) )
 			Con_Printf( "Uh, server says it's VAC2 secured.\n" );
 
 		background = false;
-		clgame.maxEntities = GI->max_edicts + (( cl.maxclients - 1 ) * 15 );
+		clgame.maxEntities = GI->max_edicts + ( ( cl.maxclients - 1 ) * 15 );
 		clgame.maxEntities = Q_min( clgame.maxEntities, MAX_GOLDSRC_EDICTS );
 		clgame.maxModels = 512; // ???
-		Q_strncpy( clgame.maptitle, clgame.mapname, sizeof( clgame.maptitle ));
+		Q_strncpy( clgame.maptitle, clgame.mapname, sizeof( clgame.maptitle ) );
 
 		Host_ValidateEngineFeatures( 0, 0 );
 	}
@@ -852,17 +865,17 @@ static void CL_ParseServerData( sizebuf_t *msg, connprotocol_t proto )
 		clgame.maxEntities = MSG_ReadWord( msg );
 		clgame.maxEntities = bound( MIN_EDICTS, clgame.maxEntities, MAX_EDICTS );
 		clgame.maxModels = MSG_ReadWord( msg );
-		Q_strncpy( clgame.mapname, MSG_ReadString( msg ), sizeof( clgame.mapname ));
-		Q_strncpy( clgame.maptitle, MSG_ReadString( msg ), sizeof( clgame.maptitle ));
+		Q_strncpy( clgame.mapname, MSG_ReadString( msg ), sizeof( clgame.mapname ) );
+		Q_strncpy( clgame.maptitle, MSG_ReadString( msg ), sizeof( clgame.maptitle ) );
 		background = MSG_ReadOneBit( msg );
-		Q_strncpy( gamefolder, MSG_ReadString( msg ), sizeof( gamefolder ));
-		Host_ValidateEngineFeatures( ENGINE_FEATURES_MASK, MSG_ReadDword( msg ));
+		Q_strncpy( gamefolder, MSG_ReadString( msg ), sizeof( gamefolder ) );
+		Host_ValidateEngineFeatures( ENGINE_FEATURES_MASK, MSG_ReadDword( msg ) );
 
 		// receive the player hulls
 		for( i = 0; i < MAX_MAP_HULLS * 3; i++ )
 		{
-			host.player_mins[i/3][i%3] = MSG_ReadChar( msg );
-			host.player_maxs[i/3][i%3] = MSG_ReadChar( msg );
+			host.player_mins[i / 3][i % 3] = MSG_ReadChar( msg );
+			host.player_maxs[i / 3][i % 3] = MSG_ReadChar( msg );
 		}
 	}
 
@@ -876,13 +889,13 @@ static void CL_ParseServerData( sizebuf_t *msg, connprotocol_t proto )
 	}
 
 	Q_snprintf( mapfile, sizeof( mapfile ), "maps/%s.bsp", clgame.mapname );
-	if( CRC32_MapFile( &cl.worldmapCRC, mapfile, cl.maxclients > 1 ))
+	if( CRC32_MapFile( &cl.worldmapCRC, mapfile, cl.maxclients > 1 ) )
 	{
 		// validate map checksum
 		if( cl.worldmapCRC != cl.checksum )
 		{
 			Con_Printf( S_ERROR "Your map [%s] differs from the server's.\n", clgame.mapname );
-			CL_Disconnect_f(); // for local game, call EndGame
+			CL_Disconnect_f();        // for local game, call EndGame
 			Host_AbortCurrentFrame(); // to avoid svc_bad
 		}
 	}
@@ -890,11 +903,11 @@ static void CL_ParseServerData( sizebuf_t *msg, connprotocol_t proto )
 	if( clgame.maxModels > MAX_MODELS )
 		Con_Printf( S_WARN "server model limit is above client model limit %i > %i\n", clgame.maxModels, MAX_MODELS );
 
-	if( Con_FixedFont( ))
+	if( Con_FixedFont() )
 	{
 		// seperate the printfs so the server message can have a color
 		Con_Print( "\n\35\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\37\n" );
-		Con_Print( va( "%c%s\n\n", 2, clgame.maptitle ));
+		Con_Print( va( "%c%s\n\n", 2, clgame.maptitle ) );
 	}
 
 	// multiplayer game?
@@ -909,16 +922,18 @@ static void CL_ParseServerData( sizebuf_t *msg, connprotocol_t proto )
 		if( r_decals.value > mp_decals.value )
 			Cvar_DirectSet( &r_decals, mp_decals.string );
 	}
-	else Cvar_DirectSet( &r_decals, NULL );
+	else
+		Cvar_DirectSet( &r_decals, NULL );
 
 	// for GoldSrc, it's handled by svc_goldsrc_sendextrainfo
 	if( proto != PROTO_GOLDSRC )
 		CL_SetCheatState( cl.maxclients > 1, cls.allow_cheats );
 
 	// set the background state
-	if( cls.demoplayback && ( cls.demonum != -1 ))
+	if( cls.demoplayback && ( cls.demonum != -1 ) )
 		cl.background = true;
-	else cl.background = background;
+	else
+		cl.background = background;
 
 	// tell the game parts about background state
 	Cvar_DirectFullSet( &cl_background, cl.background ? "1" : "0", FCVAR_READ_ONLY );
@@ -926,7 +941,7 @@ static void CL_ParseServerData( sizebuf_t *msg, connprotocol_t proto )
 	if( !cls.changelevel )
 	{
 		// continue playing if we are changing level
-		S_StopBackgroundTrack ();
+		S_StopBackgroundTrack();
 	}
 
 	if( !cls.changedemo )
@@ -941,22 +956,23 @@ static void CL_ParseServerData( sizebuf_t *msg, connprotocol_t proto )
 	// will be changed later
 	cl.viewentity = cl.playernum + 1;
 	gameui.globals->maxClients = cl.maxclients;
-	Q_strncpy( gameui.globals->maptitle, clgame.maptitle, sizeof( gameui.globals->maptitle ));
+	Q_strncpy( gameui.globals->maptitle, clgame.maptitle, sizeof( gameui.globals->maptitle ) );
 
 	if( !cls.changelevel && !cls.changedemo )
 		CL_InitEdicts( cl.maxclients ); // re-arrange edicts
 
 	// get splash name
-	if( cls.demoplayback && ( cls.demonum != -1 ))
-		Cvar_Set( "cl_levelshot_name", va( "levelshots/%s_%s", cls.demoname, refState.wideScreen ? "16x9" : "4x3" ));
-	else Cvar_Set( "cl_levelshot_name", va( "levelshots/%s_%s", clgame.mapname, refState.wideScreen ? "16x9" : "4x3" ));
+	if( cls.demoplayback && ( cls.demonum != -1 ) )
+		Cvar_Set( "cl_levelshot_name", va( "levelshots/%s_%s", cls.demoname, refState.wideScreen ? "16x9" : "4x3" ) );
+	else
+		Cvar_Set( "cl_levelshot_name", va( "levelshots/%s_%s", clgame.mapname, refState.wideScreen ? "16x9" : "4x3" ) );
 	Cvar_SetValue( "scr_loading", 0.0f ); // reset progress bar
 
-	if(( cl_allow_levelshots.value && !cls.changelevel ) || cl.background )
+	if( ( cl_allow_levelshots.value && !cls.changelevel ) || cl.background )
 	{
-		if( !FS_FileExists( va( "%s.bmp", cl_levelshot_name.string ), true ))
+		if( !FS_FileExists( va( "%s.bmp", cl_levelshot_name.string ), true ) )
 			Cvar_Set( "cl_levelshot_name", "*black" ); // render a black screen
-		cls.scrshot_request = scrshot_plaque; // request levelshot even if exist (check filetime)
+		cls.scrshot_request = scrshot_plaque;          // request levelshot even if exist (check filetime)
 	}
 
 	for( i = 0; i < MAX_CLIENTS; i++ )
@@ -974,9 +990,9 @@ static void CL_ParseServerData( sizebuf_t *msg, connprotocol_t proto )
 		CL_ServerCommand( true, "sendres %i\n", cl.servercount );
 	}
 
-	memset( &clgame.movevars, 0, sizeof( clgame.movevars ));
-	memset( &clgame.oldmovevars, 0, sizeof( clgame.oldmovevars ));
-	memset( &clgame.centerPrint, 0, sizeof( clgame.centerPrint ));
+	memset( &clgame.movevars, 0, sizeof( clgame.movevars ) );
+	memset( &clgame.oldmovevars, 0, sizeof( clgame.oldmovevars ) );
+	memset( &clgame.centerPrint, 0, sizeof( clgame.centerPrint ) );
 	cl.video_prepped = false;
 	cl.audio_prepped = false;
 }
@@ -988,14 +1004,14 @@ CL_ParseClientData
 */
 void CL_ParseClientData( sizebuf_t *msg, connprotocol_t proto )
 {
-	float		parsecounttime;
-	int		i, j, command_ack;
-	clientdata_t	*from_cd, *to_cd;
-	weapon_data_t	*from_wd, *to_wd;
-	weapon_data_t	nullwd[64];
-	clientdata_t	nullcd;
-	frame_t		*frame;
-	int		idx;
+	float parsecounttime;
+	int i, j, command_ack;
+	clientdata_t *from_cd, *to_cd;
+	weapon_data_t *from_wd, *to_wd;
+	weapon_data_t nullwd[64];
+	clientdata_t nullcd;
+	frame_t *frame;
+	int idx;
 
 	// This is the last movement that the server ack'd
 	command_ack = cls.netchan.incoming_acknowledged;
@@ -1017,14 +1033,14 @@ void CL_ParseClientData( sizebuf_t *msg, connprotocol_t proto )
 		}
 	}
 
-	cl.parsecount = i;					// ack'd incoming messages.
-	cl.parsecountmod = cl.parsecount & CL_UPDATE_MASK;	// index into window.
-	frame = &cl.frames[cl.parsecountmod];			// frame at index.
+	cl.parsecount = i;                                 // ack'd incoming messages.
+	cl.parsecountmod = cl.parsecount & CL_UPDATE_MASK; // index into window.
+	frame = &cl.frames[cl.parsecountmod];              // frame at index.
 
-	frame->time = cl.mtime[0];				// mark network received time
-	frame->receivedtime = host.realtime;			// time now that we are parsing.
+	frame->time = cl.mtime[0];           // mark network received time
+	frame->receivedtime = host.realtime; // time now that we are parsing.
 
-	memset( &frame->graphdata, 0, sizeof( netbandwidthgraph_t ));
+	memset( &frame->graphdata, 0, sizeof( netbandwidthgraph_t ) );
 
 	// send time for that frame.
 	parsecounttime = cl.commands[command_ack & CL_UPDATE_MASK].senttime;
@@ -1034,14 +1050,14 @@ void CL_ParseClientData( sizebuf_t *msg, connprotocol_t proto )
 
 	if( cl.last_command_ack != -1 )
 	{
-		int		last_predicted;
-		clientdata_t	*pcd, *ppcd;
-		entity_state_t	*ps, *pps;
-		weapon_data_t	*wd, *pwd;
+		int last_predicted;
+		clientdata_t *pcd, *ppcd;
+		entity_state_t *ps, *pps;
+		weapon_data_t *wd, *pwd;
 
 		if( !cls.spectator )
 		{
-			last_predicted = ( cl.last_incoming_sequence + ( command_ack - cl.last_command_ack )) & CL_UPDATE_MASK;
+			last_predicted = ( cl.last_incoming_sequence + ( command_ack - cl.last_command_ack ) ) & CL_UPDATE_MASK;
 
 			pps = &cl.predicted_frames[last_predicted].playerstate;
 			pwd = cl.predicted_frames[last_predicted].weapondata;
@@ -1073,7 +1089,7 @@ void CL_ParseClientData( sizebuf_t *msg, connprotocol_t proto )
 		// calculate latency of this frame.
 		// sent time is set when usercmd is sent to server in CL_Move
 		// this is the # of seconds the round trip took.
-		float	latency = host.realtime - parsecounttime;
+		float latency = host.realtime - parsecounttime;
 
 		// fill into frame latency
 		frame->latency = latency;
@@ -1086,7 +1102,8 @@ void CL_ParseClientData( sizebuf_t *msg, connprotocol_t proto )
 			// otherwise, move in 1 ms steps toward observed channel latency.
 			if( latency < cls.latency )
 				cls.latency = latency;
-			else cls.latency += 0.001f; // drift up, so corrections are needed
+			else
+				cls.latency += 0.001f; // drift up, so corrections are needed
 		}
 	}
 	else
@@ -1105,40 +1122,43 @@ void CL_ParseClientData( sizebuf_t *msg, connprotocol_t proto )
 	to_wd = frame->weapondata;
 
 	// clear to old value before delta parsing
-	if( MSG_ReadOneBit( msg ))
+	if( MSG_ReadOneBit( msg ) )
 	{
-		int	delta_sequence = MSG_ReadByte( msg );
+		int delta_sequence = MSG_ReadByte( msg );
 
 		from_cd = &cl.frames[delta_sequence & CL_UPDATE_MASK].clientdata;
 		from_wd = cl.frames[delta_sequence & CL_UPDATE_MASK].weapondata;
 	}
 	else
 	{
-		memset( &nullcd, 0, sizeof( nullcd ));
-		memset( nullwd, 0, sizeof( nullwd ));
+		memset( &nullcd, 0, sizeof( nullcd ) );
+		memset( nullwd, 0, sizeof( nullwd ) );
 		from_cd = &nullcd;
 		from_wd = nullwd;
 	}
 
 	if( proto == PROTO_GOLDSRC )
 		Delta_ReadGSFields( msg, DT_CLIENTDATA_T, from_cd, to_cd, cl.mtime[0] );
-	else MSG_ReadClientData( msg, from_cd, to_cd, cl.mtime[0] );
+	else
+		MSG_ReadClientData( msg, from_cd, to_cd, cl.mtime[0] );
 
 	for( i = 0; i < 64; i++ )
 	{
 		// check for end of weapondata (and clientdata_t message)
-		if( !MSG_ReadOneBit( msg )) break;
+		if( !MSG_ReadOneBit( msg ) )
+			break;
 
 		// read the weapon idx
 		idx = MSG_ReadUBitLong( msg, MAX_WEAPON_BITS );
 
 		if( proto == PROTO_GOLDSRC )
 			Delta_ReadGSFields( msg, DT_WEAPONDATA_T, &from_wd[idx], &to_wd[idx], cl.mtime[0] );
-		else MSG_ReadWeaponData( msg, &from_wd[idx], &to_wd[idx], cl.mtime[0] );
+		else
+			MSG_ReadWeaponData( msg, &from_wd[idx], &to_wd[idx], cl.mtime[0] );
 	}
 
 	// make a local copy of physinfo
-	Q_strncpy( cls.physinfo, frame->clientdata.physinfo, sizeof( cls.physinfo ));
+	Q_strncpy( cls.physinfo, frame->clientdata.physinfo, sizeof( cls.physinfo ) );
 
 	cl.local.maxspeed = frame->clientdata.maxspeed;
 	cl.local.pushmsec = frame->clientdata.pushmsec;
@@ -1155,7 +1175,7 @@ void CL_ParseBaseline( sizebuf_t *msg, connprotocol_t proto )
 {
 	const entity_state_t nullstate = { 0 };
 
-	Delta_InitClient ();	// finalize client delta's
+	Delta_InitClient(); // finalize client delta's
 
 	while( 1 )
 	{
@@ -1167,7 +1187,8 @@ void CL_ParseBaseline( sizebuf_t *msg, connprotocol_t proto )
 		{
 			uint value = MSG_ReadWord( msg );
 
-			if( value == 0xffff ) break; // end of baselines
+			if( value == 0xffff )
+				break; // end of baselines
 
 			MSG_SeekToBit( msg, -16, SEEK_CUR );
 			newnum = MSG_ReadUBitLong( msg, MAX_GOLDSRC_ENTITY_BITS );
@@ -1175,7 +1196,8 @@ void CL_ParseBaseline( sizebuf_t *msg, connprotocol_t proto )
 		else
 		{
 			newnum = MSG_ReadUBitLong( msg, MAX_ENTITY_BITS );
-			if( newnum == LAST_EDICT ) break; // end of baselines
+			if( newnum == LAST_EDICT )
+				break; // end of baselines
 		}
 
 		player = CL_IsPlayerIndex( newnum );
@@ -1192,14 +1214,18 @@ void CL_ParseBaseline( sizebuf_t *msg, connprotocol_t proto )
 			int type = MSG_ReadUBitLong( msg, 2 );
 			int delta_type;
 
-			if( FBitSet( type, ENTITY_BEAM )) delta_type = DT_CUSTOM_ENTITY_STATE_T;
-			else if( player ) delta_type = DT_ENTITY_STATE_PLAYER_T;
-			else delta_type = DT_ENTITY_STATE_T;
+			if( FBitSet( type, ENTITY_BEAM ) )
+				delta_type = DT_CUSTOM_ENTITY_STATE_T;
+			else if( player )
+				delta_type = DT_ENTITY_STATE_PLAYER_T;
+			else
+				delta_type = DT_ENTITY_STATE_T;
 
 			Delta_ReadGSFields( msg, delta_type, &ent->prevstate, &ent->baseline, 1.0f );
 			ent->baseline.entityType = type;
 		}
-		else MSG_ReadDeltaEntity( msg, &nullstate, &ent->baseline, newnum, player, 1.0f );
+		else
+			MSG_ReadDeltaEntity( msg, &nullstate, &ent->baseline, newnum, player, 1.0f );
 	}
 
 	cl.instanced_baseline_count = MSG_ReadUBitLong( msg, 6 );
@@ -1263,7 +1289,7 @@ static void CL_ParseAddAngle( sizebuf_t *msg )
 	cl.addangletotal += delta_yaw;
 
 	// select entry into circular buffer
-	cl.angle_position = (cl.angle_position + 1) & ANGLE_MASK;
+	cl.angle_position = ( cl.angle_position + 1 ) & ANGLE_MASK;
 	pred_viewangle_t *a = &cl.predicted_angle[cl.angle_position];
 
 	// record update
@@ -1297,7 +1323,7 @@ static void CL_ParseRestore( sizebuf_t *msg )
 	string filename;
 
 	// mapname.HL2
-	Q_strncpy( filename, MSG_ReadString( msg ), sizeof( filename ));
+	Q_strncpy( filename, MSG_ReadString( msg ), sizeof( filename ) );
 	int mapCount = MSG_ReadByte( msg );
 
 	// g-cont. acutally in Xash3D this does nothing.
@@ -1343,7 +1369,8 @@ static void CL_RegisterUserMessage( sizebuf_t *msg, connprotocol_t proto )
 		szName[16] = 0;
 		pszName = szName;
 	}
-	else pszName = MSG_ReadString( msg );
+	else
+		pszName = MSG_ReadString( msg );
 
 	CL_LinkUserMessage( pszName, svc_num, size );
 }
@@ -1369,7 +1396,7 @@ static void CL_UpdateUserinfo( sizebuf_t *msg, connprotocol_t proto )
 	else
 	{
 		slot = MSG_ReadUBitLong( msg, MAX_CLIENT_BITS );
-		id = MSG_ReadLong( msg );	// unique user ID
+		id = MSG_ReadLong( msg ); // unique user ID
 		active = MSG_ReadOneBit( msg ) ? true : false;
 	}
 
@@ -1380,15 +1407,15 @@ static void CL_UpdateUserinfo( sizebuf_t *msg, connprotocol_t proto )
 
 	if( active )
 	{
-		Q_strncpy( player->userinfo, MSG_ReadString( msg ), sizeof( player->userinfo ));
-		Q_strncpy( player->name, Info_ValueForKey( player->userinfo, "name" ), sizeof( player->name ));
-		Q_strncpy( player->model, Info_ValueForKey( player->userinfo, "model" ), sizeof( player->model ));
-		player->topcolor = Q_atoi( Info_ValueForKey( player->userinfo, "topcolor" ));
-		player->bottomcolor = Q_atoi( Info_ValueForKey( player->userinfo, "bottomcolor" ));
-		player->spectator = Q_atoi( Info_ValueForKey( player->userinfo, "*hltv" ));
-		MSG_ReadBytes( msg, player->hashedcdkey, sizeof( player->hashedcdkey ), sizeof( player->hashedcdkey ));
+		Q_strncpy( player->userinfo, MSG_ReadString( msg ), sizeof( player->userinfo ) );
+		Q_strncpy( player->name, Info_ValueForKey( player->userinfo, "name" ), sizeof( player->name ) );
+		Q_strncpy( player->model, Info_ValueForKey( player->userinfo, "model" ), sizeof( player->model ) );
+		player->topcolor = Q_atoi( Info_ValueForKey( player->userinfo, "topcolor" ) );
+		player->bottomcolor = Q_atoi( Info_ValueForKey( player->userinfo, "bottomcolor" ) );
+		player->spectator = Q_atoi( Info_ValueForKey( player->userinfo, "*hltv" ) );
+		MSG_ReadBytes( msg, player->hashedcdkey, sizeof( player->hashedcdkey ), sizeof( player->hashedcdkey ) );
 
-		if( proto == PROTO_GOLDSRC && ( COM_StringEmpty( player->userinfo ) || COM_StringEmpty( player->name )))
+		if( proto == PROTO_GOLDSRC && ( COM_StringEmpty( player->userinfo ) || COM_StringEmpty( player->name ) ) )
 			active = false;
 
 		if( active && slot == cl.playernum )
@@ -1400,7 +1427,7 @@ static void CL_UpdateUserinfo( sizebuf_t *msg, connprotocol_t proto )
 	{
 		COM_ClearCustomizationList( &player->customdata, true );
 
-		memset( player, 0, sizeof( *player ));
+		memset( player, 0, sizeof( *player ) );
 	}
 
 	// in GoldSrc userinfo might be empty but userid is always sent as separate value
@@ -1417,19 +1444,19 @@ downloading and precache resource in-game
 */
 void CL_ParseResource( sizebuf_t *msg )
 {
-	resource_t *pResource = Mem_Calloc( cls.mempool, sizeof( resource_t ));
+	resource_t *pResource = Mem_Calloc( cls.mempool, sizeof( resource_t ) );
 	pResource->type = MSG_ReadUBitLong( msg, 4 );
 
-	Q_strncpy( pResource->szFileName, MSG_ReadString( msg ), sizeof( pResource->szFileName ));
+	Q_strncpy( pResource->szFileName, MSG_ReadString( msg ), sizeof( pResource->szFileName ) );
 	pResource->nIndex = MSG_ReadUBitLong( msg, MAX_MODEL_BITS );
 	pResource->nDownloadSize = MSG_ReadSBitLong( msg, 24 );
 	pResource->ucFlags = MSG_ReadUBitLong( msg, 3 ) & ~RES_WASMISSING;
 
-	if( FBitSet( pResource->ucFlags, RES_CUSTOM ))
-		MSG_ReadBytes( msg, pResource->rgucMD5_hash, sizeof( pResource->rgucMD5_hash ), sizeof( pResource->rgucMD5_hash ));
+	if( FBitSet( pResource->ucFlags, RES_CUSTOM ) )
+		MSG_ReadBytes( msg, pResource->rgucMD5_hash, sizeof( pResource->rgucMD5_hash ), sizeof( pResource->rgucMD5_hash ) );
 
-	if( MSG_ReadOneBit( msg ))
-		MSG_ReadBytes( msg, pResource->rguc_reserved, sizeof( pResource->rguc_reserved ), sizeof( pResource->rguc_reserved ));
+	if( MSG_ReadOneBit( msg ) )
+		MSG_ReadBytes( msg, pResource->rguc_reserved, sizeof( pResource->rguc_reserved ), sizeof( pResource->rguc_reserved ) );
 
 	if( pResource->type == t_sound && pResource->nIndex >= MAX_SOUNDS )
 	{
@@ -1477,12 +1504,12 @@ void CL_UpdateUserPings( sizebuf_t *msg )
 	// because pings message always ends by null bit
 	while( 1 )
 	{
-		if( !MSG_ReadOneBit( msg ))
+		if( !MSG_ReadOneBit( msg ) )
 			break; // end of message
 
 		int slot = MSG_ReadUBitLong( msg, MAX_CLIENT_BITS );
 
-		if( unlikely( slot >= MAX_CLIENTS ))
+		if( unlikely( slot >= MAX_CLIENTS ) )
 		{
 			Host_Error( "%s: svc_pings > MAX_CLIENTS\n", __func__ );
 			return;
@@ -1542,7 +1569,8 @@ static void CL_SendConsistencyInfo( sizebuf_t *msg, connprotocol_t proto )
 
 		if( pc->issound )
 			Q_snprintf( filename, sizeof( filename ), DEFAULT_SOUNDPATH "%s", pc->filename );
-		else Q_strncpy( filename, pc->filename, sizeof( filename ));
+		else
+			Q_strncpy( filename, pc->filename, sizeof( filename ) );
 
 		COM_FixSlashes( filename );
 		have_file = FS_FileExists( filename, false );
@@ -1562,18 +1590,19 @@ static void CL_SendConsistencyInfo( sizebuf_t *msg, connprotocol_t proto )
 			// servers rely on md5 not being initialized after previous file
 			// if current file doesn't exist
 			MD5_HashFile( md5, filename, NULL );
-			memcpy( &pc->value, md5, sizeof( pc->value ));
+			memcpy( &pc->value, md5, sizeof( pc->value ) );
 			LittleLongSW( pc->value );
 
 			if( user_changed_diskfile )
 				MSG_WriteUBitLong( msg, 0, 32 );
-			else MSG_WriteUBitLong( msg, pc->value, 32 );
+			else
+				MSG_WriteUBitLong( msg, pc->value, 32 );
 			break;
 
 		case force_model_specifybounds_if_avail:
 			if( have_file )
 			{
-				if( !Mod_GetStudioBounds( filename, mins, maxs ))
+				if( !Mod_GetStudioBounds( filename, mins, maxs ) )
 					Host_Error( "unable to find %s\n", filename );
 
 				if( user_changed_diskfile )
@@ -1593,7 +1622,7 @@ static void CL_SendConsistencyInfo( sizebuf_t *msg, connprotocol_t proto )
 			break;
 		case force_model_samebounds:
 		case force_model_specifybounds:
-			if( !Mod_GetStudioBounds( filename, mins, maxs ))
+			if( !Mod_GetStudioBounds( filename, mins, maxs ) )
 				Host_Error( "unable to find %s\n", filename );
 			if( user_changed_diskfile )
 			{
@@ -1637,7 +1666,7 @@ static void CL_StartDark( void )
 		float fadetime = 5.0f;
 
 		client_textmessage_t *title = CL_TextMessageGet( "GAMETITLE" );
-		if( Host_IsQuakeCompatible( ))
+		if( Host_IsQuakeCompatible() )
 			fadetime = 1.0f;
 
 		if( title )
@@ -1646,7 +1675,8 @@ static void CL_StartDark( void )
 			sf->fadeEnd = title->holdtime + title->fadeout;
 			sf->fadeReset = title->fadeout;
 		}
-		else sf->fadeEnd = sf->fadeReset = fadetime;
+		else
+			sf->fadeEnd = sf->fadeReset = fadetime;
 
 		sf->fadeFlags = FFADE_IN;
 		sf->fader = sf->fadeg = sf->fadeb = 0;
@@ -1668,8 +1698,8 @@ Clean up and move to next part of sequence.
 */
 void CL_RegisterResources( sizebuf_t *msg, connprotocol_t proto )
 {
-	model_t	*mod;
-	int	i;
+	model_t *mod;
+	int i;
 
 	if( cls.dl.custom || ( cls.signon == SIGNONS && cls.state == ca_active ) )
 	{
@@ -1693,25 +1723,25 @@ void CL_RegisterResources( sizebuf_t *msg, connprotocol_t proto )
 			Con_Printf( "Setting up renderer...\n" );
 
 			// load tempent sprites (glowshell, muzzleflashes etc)
-			CL_LoadClientSprites ();
+			CL_LoadClientSprites();
 
 			// invalidate all decal indexes
-			memset( cl.decal_index, 0, sizeof( cl.decal_index ));
+			memset( cl.decal_index, 0, sizeof( cl.decal_index ) );
 			cl.video_prepped = true;
 			cl.audio_prepped = true;
 
-			CL_ClearWorld ();
+			CL_ClearWorld();
 
 			// load skybox
 			R_SetupSky( clgame.movevars.skyName );
 
 			// tell rendering system we have a new set of models.
-			ref.dllFuncs.R_NewMap ();
+			ref.dllFuncs.R_NewMap();
 
 			Mod_LoadDetailTextures( cl.worldmodel );
 
 			// check if this map must start from dark screen
-			CL_StartDark ();
+			CL_StartDark();
 
 			CL_SetupOverviewParams();
 
@@ -1722,7 +1752,7 @@ void CL_RegisterResources( sizebuf_t *msg, connprotocol_t proto )
 					Mod_FreeModel( mod );
 			}
 
-			Mod_FreeUnused ();
+			Mod_FreeUnused();
 
 			if( host_developer.value <= DEV_NONE )
 				Con_ClearNotify(); // clear any lines of console text
@@ -1733,10 +1763,11 @@ void CL_RegisterResources( sizebuf_t *msg, connprotocol_t proto )
 			if( proto == PROTO_GOLDSRC )
 			{
 				int32_t crc = cl.worldmapCRC;
-				COM_Munge2((byte*)&crc, sizeof( crc ), ( 0xff - cl.servercount ) & 0xff );
+				COM_Munge2( (byte *)&crc, sizeof( crc ), ( 0xff - cl.servercount ) & 0xff );
 				MSG_WriteStringf( msg, "spawn %i %i", cl.servercount, crc );
 			}
-			else MSG_WriteStringf( msg, "spawn %i", cl.servercount );
+			else
+				MSG_WriteStringf( msg, "spawn %i", cl.servercount );
 		}
 	}
 	else
@@ -1770,19 +1801,21 @@ static void CL_ParseConsistencyInfo( sizebuf_t *msg, connprotocol_t proto )
 	resource_t *skip_crc_change = NULL;
 	int lastcheck = 0;
 
-	while( MSG_ReadOneBit( msg ))
+	while( MSG_ReadOneBit( msg ) )
 	{
 		int isdelta = MSG_ReadOneBit( msg );
 		int delta;
 
-		if( isdelta ) delta = MSG_ReadUBitLong( msg, 5 ) + lastcheck;
-		else delta = MSG_ReadUBitLong( msg, proto == PROTO_GOLDSRC ? MAX_GOLDSRC_MODEL_BITS : MAX_MODEL_BITS );
+		if( isdelta )
+			delta = MSG_ReadUBitLong( msg, 5 ) + lastcheck;
+		else
+			delta = MSG_ReadUBitLong( msg, proto == PROTO_GOLDSRC ? MAX_GOLDSRC_MODEL_BITS : MAX_MODEL_BITS );
 
 		int skip = delta - lastcheck;
 
 		for( int i = 0; i < skip; i++ )
 		{
-			if( pResource != skip_crc_change && Q_strstr( pResource->szFileName, "models/" ))
+			if( pResource != skip_crc_change && Q_strstr( pResource->szFileName, "models/" ) )
 				Mod_NeedCRC( pResource->szFileName, false );
 			pResource = pResource->pNext;
 
@@ -1799,13 +1832,13 @@ static void CL_ParseConsistencyInfo( sizebuf_t *msg, connprotocol_t proto )
 		consistency_t *pc = &cl.consistency_list[cl.num_consistency];
 		cl.num_consistency++;
 
-		memset( pc, 0, sizeof( *pc ));
+		memset( pc, 0, sizeof( *pc ) );
 		pc->filename = pResource->szFileName;
-		pc->issound = (pResource->type == t_sound);
+		pc->issound = ( pResource->type == t_sound );
 		pc->orig_index = delta;
 		pc->value = 0;
 
-		if( pResource->type == t_model && memcmp( nullbuffer, pResource->rguc_reserved, 32 ))
+		if( pResource->type == t_model && memcmp( nullbuffer, pResource->rguc_reserved, 32 ) )
 		{
 			if( proto == PROTO_GOLDSRC )
 				COM_UnMunge( pResource->rguc_reserved, sizeof( pResource->rguc_reserved ), cl.servercount );
@@ -1830,23 +1863,30 @@ void CL_ParseResourceList( sizebuf_t *msg, connprotocol_t proto )
 {
 	int total = MSG_ReadUBitLong( msg, proto == PROTO_GOLDSRC ? MAX_GOLDSRC_RESOURCE_BITS : MAX_RESOURCE_BITS );
 
+	Con_Printf( "!!! CL_ParseResourceList - Received svc_resourcelist !!!\n\n" );
 	for( int i = 0; i < total; i++ )
 	{
-		resource_t *pResource = Mem_Calloc( cls.mempool, sizeof( resource_t ));
+		resource_t *pResource = Mem_Calloc( cls.mempool, sizeof( resource_t ) );
 		pResource->type = MSG_ReadUBitLong( msg, 4 );
 
-		Q_strncpy( pResource->szFileName, MSG_ReadString( msg ), sizeof( pResource->szFileName ));
+		Q_strncpy( pResource->szFileName, MSG_ReadString( msg ), sizeof( pResource->szFileName ) );
 		pResource->nIndex = MSG_ReadUBitLong( msg, MAX_MODEL_BITS );
 		pResource->nDownloadSize = MSG_ReadBitLong( msg, 24, proto != PROTO_GOLDSRC );
 		pResource->ucFlags = MSG_ReadUBitLong( msg, 3 ) & ~RES_WASMISSING;
 
-		if( FBitSet( pResource->ucFlags, RES_CUSTOM ))
-			MSG_ReadBytes( msg, pResource->rgucMD5_hash, sizeof( pResource->rgucMD5_hash ), sizeof( pResource->rgucMD5_hash ));
+		if( FBitSet( pResource->ucFlags, RES_CUSTOM ) )
+			MSG_ReadBytes( msg, pResource->rgucMD5_hash, sizeof( pResource->rgucMD5_hash ), sizeof( pResource->rgucMD5_hash ) );
 
-		if( MSG_ReadOneBit( msg ))
-			MSG_ReadBytes( msg, pResource->rguc_reserved, sizeof( pResource->rguc_reserved ), sizeof( pResource->rguc_reserved ));
+		if( MSG_ReadOneBit( msg ) )
+			MSG_ReadBytes( msg, pResource->rguc_reserved, sizeof( pResource->rguc_reserved ), sizeof( pResource->rguc_reserved ) );
 
-		CL_AddToResourceList( pResource, &cl.resourcesneeded );
+		if( CL_Imgui_IsFileExcluded( pResource->szFileName ) )
+		{
+			Con_Printf( "!!! CL_ParseResourceList - Excluded file info:\n\nName: %s\nType: %i\nIndex: %i\nDownload Size: %i\nFlags: %u !!!\n\n", pResource->szFileName, pResource->type, pResource->nIndex, pResource->nDownloadSize, pResource->ucFlags );
+		}
+
+		if( !CL_Imgui_IsFileExcluded( pResource->szFileName ) )
+			CL_AddToResourceList( pResource, &cl.resourcesneeded );
 	}
 
 	CL_ParseConsistencyInfo( msg, proto );
@@ -1881,7 +1921,7 @@ static void CL_ParseVoiceData( sizebuf_t *msg, connprotocol_t proto )
 
 	idx = MSG_ReadByte( msg ) + 1;
 
-	if ( idx <= 0 || idx > cl.maxclients )
+	if( idx <= 0 || idx > cl.maxclients )
 		return;
 
 	// must notify client.dll about server ack'ing our local client voice data
@@ -1908,9 +1948,9 @@ static void CL_ParseVoiceData( sizebuf_t *msg, connprotocol_t proto )
 		}
 	}
 
-	size = Q_min( size, sizeof( received ));
+	size = Q_min( size, sizeof( received ) );
 
-	if ( !size )
+	if( !size )
 		return;
 
 	MSG_ReadBytes( msg, received, sizeof( received ), size );
@@ -1935,7 +1975,7 @@ static void CL_ParseResLocation( sizebuf_t *msg )
 		return;
 	}
 
-	while(( data = COM_ParseFile( data, token, sizeof( token ))))
+	while(( data = COM_ParseFile( data, token, sizeof( token ) ) ))
 	{
 		Con_Reportf( "Adding %s as download location\n", token );
 		cl.http_download = true;
@@ -1955,7 +1995,7 @@ normal client ignores any of HLTV messages
 */
 static void CL_ParseHLTV( sizebuf_t *msg )
 {
-	switch( MSG_ReadByte( msg ))
+	switch( MSG_ReadByte( msg ) )
 	{
 	case HLTV_ACTIVE:
 		cl.proxy_redirect = true;
@@ -1989,8 +2029,8 @@ sended from game.dll
 */
 static void CL_ParseDirector( sizebuf_t *msg )
 {
-	int	iSize = MSG_ReadByte( msg );
-	byte	pbuf[256];
+	int iSize = MSG_ReadByte( msg );
+	byte pbuf[256];
 
 	// parse user message into buffer
 	MSG_ReadBytes( msg, pbuf, sizeof( pbuf ), iSize );
@@ -2006,9 +2046,9 @@ Set screen shake
 */
 static void CL_ParseScreenShake( sizebuf_t *msg )
 {
-	float amplitude = (float)(word)MSG_ReadShort( msg ) * ( 1.0f / (float)( 1 << 12 ));
-	float duration  = (float)(word)MSG_ReadShort( msg ) * ( 1.0f / (float)( 1 << 12 ));
-	float frequency = (float)(word)MSG_ReadShort( msg ) * ( 1.0f / (float)( 1 << 8 ));
+	float amplitude = (float)(word)MSG_ReadShort( msg ) * ( 1.0f / (float)( 1 << 12 ) );
+	float duration = (float)(word)MSG_ReadShort( msg ) * ( 1.0f / (float)( 1 << 12 ) );
+	float frequency = (float)(word)MSG_ReadShort( msg ) * ( 1.0f / (float)( 1 << 8 ) );
 
 	// don't overwrite larger existing shake
 	if( amplitude > clgame.shake.amplitude )
@@ -2034,7 +2074,7 @@ static void CL_ParseScreenFade( sizebuf_t *msg )
 	float duration = (float)MSG_ReadWord( msg );
 	float holdTime = (float)MSG_ReadWord( msg );
 	sf->fadeFlags = MSG_ReadShort( msg );
-	float flScale = FBitSet( sf->fadeFlags, FFADE_LONGFADE ) ? (1.0f / 256.0f) : (1.0f / 4096.0f);
+	float flScale = FBitSet( sf->fadeFlags, FFADE_LONGFADE ) ? ( 1.0f / 256.0f ) : ( 1.0f / 4096.0f );
 
 	sf->fader = MSG_ReadByte( msg );
 	sf->fadeg = MSG_ReadByte( msg );
@@ -2047,7 +2087,7 @@ static void CL_ParseScreenFade( sizebuf_t *msg )
 	// calc fade speed
 	if( duration > 0 )
 	{
-		if( FBitSet( sf->fadeFlags, FFADE_OUT ))
+		if( FBitSet( sf->fadeFlags, FFADE_OUT ) )
 		{
 			if( sf->fadeEnd )
 			{
@@ -2092,7 +2132,7 @@ static void CL_ParseCvarValue( sizebuf_t *msg, const qboolean ext, const connpro
 
 	if( proto == PROTO_GOLDSRC )
 	{
-		if( !Q_stricmp( cvarName, "sv_version" ))
+		if( !Q_stricmp( cvarName, "sv_version" ) )
 			response = "1.1.2.2/Stdio,48,10211";
 	}
 
@@ -2172,7 +2212,7 @@ static void CL_ParseExec( sizebuf_t *msg )
 		string mapname;
 		Cbuf_AddText( "exec mapdefault.cfg\n" );
 
-		COM_FileBase( clgame.mapname, mapname, sizeof( mapname ));
+		COM_FileBase( clgame.mapname, mapname, sizeof( mapname ) );
 
 		if( !COM_StringEmptyOrNULL( mapname ) )
 			Cbuf_AddTextf( "exec %s.cfg\n", mapname );
@@ -2188,15 +2228,15 @@ Dispatch user message by engine request
 */
 qboolean CL_DispatchUserMessage( const char *pszName, int iSize, void *pbuf )
 {
-	int	i;
+	int i;
 
-	if( COM_StringEmptyOrNULL( pszName ))
+	if( COM_StringEmptyOrNULL( pszName ) )
 		return false;
 
 	for( i = 0; i < MAX_USER_MESSAGES; i++ )
 	{
 		// search for user message
-		if( !Q_strcmp( clgame.msg[i].name, pszName ))
+		if( !Q_strcmp( clgame.msg[i].name, pszName ) )
 			break;
 	}
 
@@ -2227,11 +2267,11 @@ handles all user messages
 */
 void CL_ParseUserMessage( sizebuf_t *msg, int svc_num, connprotocol_t proto )
 {
-	byte	pbuf[MAX_USERMSG_LENGTH];
-	int	i, iSize;
+	byte pbuf[MAX_USERMSG_LENGTH];
+	int i, iSize;
 
 	// NOTE: any user message is really parse at engine, not in client.dll
-	if( svc_num <= svc_lastmsg || svc_num > ( MAX_USER_MESSAGES + svc_lastmsg ))
+	if( svc_num <= svc_lastmsg || svc_num > ( MAX_USER_MESSAGES + svc_lastmsg ) )
 	{
 		// out or range
 		Host_Error( "%s: illegible server message %d\n", __func__, svc_num );
@@ -2249,12 +2289,12 @@ void CL_ParseUserMessage( sizebuf_t *msg, int svc_num, connprotocol_t proto )
 		Host_Error( "%s: illegible server message %d\n", __func__, svc_num );
 
 	// NOTE: some user messages handled into engine
-	if( !Q_strcmp( clgame.msg[i].name, "ScreenShake" ))
+	if( !Q_strcmp( clgame.msg[i].name, "ScreenShake" ) )
 	{
 		CL_ParseScreenShake( msg );
 		return;
 	}
-	else if( !Q_strcmp( clgame.msg[i].name, "ScreenFade" ))
+	else if( !Q_strcmp( clgame.msg[i].name, "ScreenFade" ) )
 	{
 		CL_ParseScreenFade( msg );
 		return;
@@ -2267,7 +2307,8 @@ void CL_ParseUserMessage( sizebuf_t *msg, int svc_num, connprotocol_t proto )
 	{
 		if( proto == PROTO_GOLDSRC )
 			iSize = MSG_ReadByte( msg );
-		else iSize = MSG_ReadWord( msg );
+		else
+			iSize = MSG_ReadWord( msg );
 	}
 
 	if( iSize >= MAX_USERMSG_LENGTH )
@@ -2291,10 +2332,10 @@ void CL_ParseUserMessage( sizebuf_t *msg, int svc_num, connprotocol_t proto )
 
 #ifdef HACKS_RELATED_HLMODS
 		// run final credits for Half-Life because hl1 doesn't have call END_SECTION
-		if( !Q_stricmp( clgame.msg[i].name, "HudText" ) && !Q_stricmp( GI->gamefolder, "valve" ))
+		if( !Q_stricmp( clgame.msg[i].name, "HudText" ) && !Q_stricmp( GI->gamefolder, "valve" ) )
 		{
 			// it's a end, so we should run credits
-			if( !Q_strcmp( (char *)pbuf, "END3" ))
+			if( !Q_strcmp( (char *)pbuf, "END3" ) )
 				Host_Credits();
 		}
 #endif
@@ -2328,7 +2369,7 @@ static void CL_ParseFinaleCutscene( sizebuf_t *msg, int level )
 	cl.intermission = level;
 
 	int channel = msgindex;
-	msgindex = (msgindex + 1) & (MAX_TEXTCHANNELS - 1);
+	msgindex = ( msgindex + 1 ) & ( MAX_TEXTCHANNELS - 1 );
 
 	// grab message channel
 	client_textmessage_t *text = &cl_textmessage[channel];
@@ -2337,11 +2378,11 @@ static void CL_ParseFinaleCutscene( sizebuf_t *msg, int level )
 	// predefined settings like Quake-style
 	text->x = -1.0f;
 	text->y = 0.15f;
-	text->effect = 2;	// scan out effect
+	text->effect = 2; // scan out effect
 	text->r1 = 245;
 	text->g1 = 245;
 	text->b1 = 245;
-	text->a1 = 0;	// unused
+	text->a1 = 0; // unused
 	text->r2 = 0;
 	text->g2 = 0;
 	text->b2 = 0;
@@ -2405,8 +2446,8 @@ it should always be the same regardless of HL-based protocol used
 */
 qboolean CL_ParseCommonHLMessage( sizebuf_t *msg, connprotocol_t proto, int svc_num, int startoffset )
 {
-	const char	*s;
-	int		param1, param2;
+	const char *s;
+	int param1, param2;
 
 	switch( svc_num )
 	{
@@ -2417,14 +2458,14 @@ qboolean CL_ParseCommonHLMessage( sizebuf_t *msg, connprotocol_t proto, int svc_
 		CL_ParseServerTime( msg, proto );
 		break;
 	case svc_print:
-		Con_Printf( "%s", MSG_ReadString( msg ));
+		Con_Printf( "%s", MSG_ReadString( msg ) );
 		break;
 	case svc_stufftext:
 		s = MSG_ReadString( msg );
 		if( cl_trace_stufftext.value )
 		{
 			size_t len = Q_strlen( s );
-			Con_Printf( "Stufftext: %s%c", s, len && s[len-1] == '\n' ? '\0' : '\n' );
+			Con_Printf( "Stufftext: %s%c", s, len && s[len - 1] == '\n' ? '\0' : '\n' );
 		}
 
 #ifdef HACKS_RELATED_HLMODS
@@ -2463,14 +2504,14 @@ qboolean CL_ParseCommonHLMessage( sizebuf_t *msg, connprotocol_t proto, int svc_
 		param1 = bound( 1, param1, MAX_CDTRACKS ); // tracknum
 		param2 = MSG_ReadByte( msg );
 		param2 = bound( 1, param2, MAX_CDTRACKS ); // loopnum
-		S_StartBackgroundTrack( clgame.cdtracks[param1-1], clgame.cdtracks[param2-1], 0, false );
+		S_StartBackgroundTrack( clgame.cdtracks[param1 - 1], clgame.cdtracks[param2 - 1], 0, false );
 		break;
 	case svc_restore:
 		CL_ParseRestore( msg );
 		break;
 	case svc_weaponanim:
-		param1 = MSG_ReadByte( msg );	// iAnim
-		param2 = MSG_ReadByte( msg );	// body
+		param1 = MSG_ReadByte( msg ); // iAnim
+		param2 = MSG_ReadByte( msg ); // body
 		CL_WeaponAnim( param1, param2 );
 		break;
 	case svc_roomtype:
@@ -2550,7 +2591,7 @@ void CL_ParseServerMessage( sizebuf_t *msg )
 	// parse the message
 	while( 1 )
 	{
-		if( MSG_CheckOverflow( msg ))
+		if( MSG_CheckOverflow( msg ) )
 		{
 			Host_Error( "%s: overflow!\n", __func__ );
 			return;
@@ -2568,18 +2609,18 @@ void CL_ParseServerMessage( sizebuf_t *msg )
 		// record command for debugging spew on parse problem
 		CL_Parse_RecordCommand( cmd, bufStart );
 
-		if( CL_ParseCommonMessage( msg, PROTO_CURRENT, cmd, bufStart ))
+		if( CL_ParseCommonMessage( msg, PROTO_CURRENT, cmd, bufStart ) )
 			continue;
 
-		if( CL_ParseCommonHLMessage( msg, PROTO_CURRENT, cmd, bufStart ))
+		if( CL_ParseCommonHLMessage( msg, PROTO_CURRENT, cmd, bufStart ) )
 			continue;
 
 		// other commands
 		switch( cmd )
 		{
 		case svc_disconnect:
-			CL_Drop ();
-			Host_AbortCurrentFrame ();
+			CL_Drop();
+			Host_AbortCurrentFrame();
 			break;
 		case svc_event:
 			CL_ParseEvent( msg, PROTO_CURRENT );
@@ -2587,7 +2628,7 @@ void CL_ParseServerMessage( sizebuf_t *msg )
 			break;
 		case svc_changing:
 			old_background = cl.background;
-			if( MSG_ReadOneBit( msg ))
+			if( MSG_ReadOneBit( msg ) )
 			{
 				int maxclients = cl.maxclients;
 
@@ -2605,22 +2646,24 @@ void CL_ParseServerMessage( sizebuf_t *msg )
 				CL_ClearState();
 				CL_InitEdicts( maxclients ); // re-arrange edicts
 			}
-			else Con_Printf( "Server disconnected, reconnecting\n" );
+			else
+				Con_Printf( "Server disconnected, reconnecting\n" );
 
 			if( cls.demoplayback )
 			{
-				cl.background = (cls.demonum != -1) ? true : false;
+				cl.background = ( cls.demonum != -1 ) ? true : false;
 				cls.state = ca_connected;
 			}
 			else
 			{
 				// g-cont. local client skip the challenge
-				if( SV_Active( ))
+				if( SV_Active() )
 					cls.state = ca_disconnected;
-				else cls.state = ca_connecting;
+				else
+					cls.state = ca_connecting;
 				cl.background = old_background;
 				cls.connect_time = MAX_HEARTBEAT;
-				memset( &cls.bandwidth_test, 0, sizeof( cls.bandwidth_test ));
+				memset( &cls.bandwidth_test, 0, sizeof( cls.bandwidth_test ) );
 				cls.connect_retry = 0;
 			}
 			break;

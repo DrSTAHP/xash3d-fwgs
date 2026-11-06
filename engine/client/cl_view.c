@@ -21,6 +21,7 @@ GNU General Public License for more details.
 #include "sound.h"
 #include "input.h" // touch
 #include "platform/platform.h" // GL_UpdateSwapInterval
+#include "imgui_hack.h"
 
 /*
 ===============
@@ -348,6 +349,8 @@ qboolean V_PreRender( void )
 
 	ref.dllFuncs.R_BeginFrame( !cl.paused && ( cls.state == ca_active ));
 
+	VID_Imgui_PreRender_SDL2_GL();
+
 	GL_UpdateSwapInterval( );
 
 	return true;
@@ -573,6 +576,9 @@ void V_PostRender( void )
 	SCR_MakeScreenShot();
 	ref.dllFuncs.R_AllowFog( true );
 	Platform_SetTimer( 0.0f );
+
+	VID_Imgui_PostRender_SDL2_GL();
+
 	ref.dllFuncs.R_EndFrame();
 
 	V_CheckGammaEnd();

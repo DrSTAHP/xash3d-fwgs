@@ -65,7 +65,12 @@ static inline void MSG_Clear( sizebuf_t *sb )
 
 static inline void MSG_InitExt( sizebuf_t *sb, const char *pDebugName, void *pData, int nBytes, int nBits )
 {
+#ifdef __cplusplus
+	sb->pData = reinterpret_cast<byte*>(pData);
+#else
 	sb->pData = pData;
+#endif
+
 	MSG_Clear( sb );
 
 	if( nBits < 0 )

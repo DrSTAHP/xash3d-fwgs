@@ -21,8 +21,11 @@ GNU General Public License for more details.
 #include "client.h"
 #include "vgui_draw.h"
 #include "platform_sdl2.h"
+#include "imgui_hack.h"
 #include "sound.h"
 #include "vid_common.h"
+
+#include "sdl2/platform_sdl2.h"
 
 /*
 =============
@@ -418,6 +421,8 @@ static void SDLash_EventHandler( SDL_Event *event )
 			break;
 		}
 	}
+
+	VID_Imgui_ProcessEvent_SDL2_GL( event );
 }
 
 /*

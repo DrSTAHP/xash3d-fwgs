@@ -20,6 +20,8 @@ GNU General Public License for more details.
 #include "input.h"
 #include "library.h"
 
+#include "imgui_hack.h"
+
 CVAR_DEFINE_AUTO( scr_centertime, "2.5", 0, "centerprint hold time" );
 CVAR_DEFINE_AUTO( scr_loading, "0", 0, "loading bar progress" );
 CVAR_DEFINE_AUTO( scr_download, "-1", 0, "downloading bar progress" );
@@ -693,6 +695,7 @@ void SCR_UpdateScreen( void )
 		screen_redraw = SCR_DrawPlaque();
 		break;
 	case ca_active:
+		VID_Imgui_Render_SDL2_GL();
 		Con_RunConsole ();
 		V_RenderView();
 		break;

@@ -19,6 +19,7 @@ GNU General Public License for more details.
 #include "net_encode.h"
 #include "cl_tent.h"
 #include "input.h"
+#include "imgui_hack.h"
 #include "vgui_draw.h"
 #include "library.h"
 #include "vid_common.h"
@@ -3864,6 +3865,9 @@ static void CL_InitLocal( void )
 	Cmd_AddCommand( "richpresence_update", Cmd_Null_f, "compatibility command, does nothing" );
 
 	Cmd_AddCommand( "cl_list_messages", CL_ListMessages_f, "list registered user messages" );
+
+	Cmd_AddCommand("open_hack_menu", CL_HackMenuOpen, "Opens the hack menu.");
+	Cmd_AddCommand("close_hack_menu", CL_HackMenuClose, "Closes the hack menu.");
 
 	Cvar_RegisterVariable(&cl_hack_bhop);
 }

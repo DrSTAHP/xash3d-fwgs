@@ -20,6 +20,8 @@ GNU General Public License for more details.
 #include "vid_common.h"
 #include "platform/platform.h"
 
+#include "imgui_hack.h"
+
 static CVAR_DEFINE_AUTO( vid_mode, "0", FCVAR_RENDERINFO, "current video mode index (used only for storage)" );
 static CVAR_DEFINE_AUTO( vid_rotate, "0", FCVAR_RENDERINFO|FCVAR_VIDRESTART, "screen rotation (0-3)" );
 static CVAR_DEFINE_AUTO( vid_scale, "1.0", FCVAR_RENDERINFO|FCVAR_VIDRESTART, "pixel scale" );
@@ -224,4 +226,6 @@ void VID_Init( void )
 
 	V_Init(); // init gamma
 	R_Init(); // init renderer
+
+	VID_Imgui_Init_SDL2_GL();
 }
