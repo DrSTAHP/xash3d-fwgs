@@ -339,25 +339,13 @@ static void GAME_EXPORT R_SetupSky( int *skyboxTextures )
 		tr.skyboxTextures[i] = skyboxTextures[i];
 }
 
-static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_x, int offset_y, float scale_x, float scale_y )
+static qboolean R_SetDisplayTransform( ref_screen_rotation_t rotate, int offset_x, int offset_y, float unused1_default_at_1, float unused2_default_at_1 )
 {
-	qboolean ret = true;
-
 	tr.rotation = rotate;
+	tr.offset_x = offset_x;
+	tr.offset_y = offset_y;
 
-	if( offset_x || offset_y )
-	{
-		gEngfuncs.Con_Printf("offset transform not supported\n");
-		ret = false;
-	}
-
-	if( scale_x != 1.0f || scale_y != 1.0f )
-	{
-		gEngfuncs.Con_Printf("scale transform not supported\n");
-		ret = false;
-	}
-
-	return ret;
+	return true;
 }
 
 static void GAME_EXPORT VGUI_SetupDrawing( qboolean rect )
@@ -390,7 +378,7 @@ static void* GAME_EXPORT R_GetProcAddress( const char *name )
 #if XASH_GL4ES
 	return gl4es_GetProcAddress( name );
 #else // TODO: other wrappers
-	return gEngfuncs.GL_GetProcAddress( name );
+	return GL_GetProcAddress( name );
 #endif
 }
 
